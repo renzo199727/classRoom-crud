@@ -27,8 +27,16 @@ async function create(params) {
     const user = new db.User(params);
     user.passwordHash = await bcrypt.hash(params.password, 10);
     await user.save();
-}
 
+     await db.ActivityLog.create({
+        userId: user.id,
+        actionType: 'CREATE',
+        actionDetails: 'User account created',
+        ipAddress: req.ip,
+        browserInfo: req.headers['user-agent']
+    });
+}
+  
 async function update(id, params) {
     // Extract password fields from params if they exist
     const { currentPassword, newPassword, confirmPassword, ...updateFields } = params;
@@ -70,12 +78,28 @@ async function update(id, params) {
 
     // Save the user
     await user.save();
+
+    await db.ActivityLog.create({
+        userId: user.id,
+        actionType: 'UPDATE',
+        actionDetails: 'User profile updated',
+        ipAddress: req.ip,
+        browserInfo: req.headers['user-agent']
+    });
 }
 
 
 async function _delete(id) {
     const user = await getUser(id);
     await user.destroy();
+
+     await db.ActivityLog.create({
+        userId: user.id,
+        actionType: 'DELETE',
+        actionDetails: 'User account deleted',
+        ipAddress: req.ip,
+        browserInfo: req.headers['user-agent']
+    });
 }
 
 async function getUser(id) {
